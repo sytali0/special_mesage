@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sana Bir Şey Söylemem Lazım... </title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Icons (Lucide via CDN - Updated to robust jsdelivr link to prevent 404 HTML response errors) -->
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+
+    <style>
+        :root {
+            --primary-glow: rgba(255, 214, 230, 0.6);
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-main: #f0f0f0;
+            --text-muted: #d0d0d0;
+            --accent: #ff8fa3;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: radial-gradient(circle at top left, #1a1a2e, #16213e, #0f0c29);
+            color: var(--text-main);
+            overflow-x: hidden;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* --- Arkaplan & Efektler --- */
+        #snow-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .bokeh {
+            position: fixed;
+            width: 50vw;
+            height: 50vw;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(144, 96, 235, 0.15), transparent 70%);
+            animation: float 20s infinite ease-in-out;
+            z-index: 0;
+            pointer-events: none;
+        }
+        .bokeh:nth-child(1) { top: -10%; left: -10%; animation-delay: 0s; }
+        .bokeh:nth-child(2) { bottom: -10%; right: -10%; background: radial-gradient(circle, rgba(255, 143, 163, 0.15), transparent 70%); animation-delay: -5s; }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(30px, 50px); }
+        }
+
+        /* --- Layout & Typography --- */
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 20px;
+            position: relative;
+            z-index: 2;
+        }
+
+        h1, h2, h3 {
+            font-family: 'Playfair Display', serif;
+        }
+
+        /* --- Glassmorphism --- */
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        /* --- Müzik Player --- */
+        .music-player {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .music-player:hover {
+            background: rgba(255,255,255,0.2);
+            transform: scale(1.1);
+        }
+
+        /* --- Hero Section --- */
+        .hero {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            position: relative;
+            opacity: 0; /* JS ile açılacak */
+            transform: scale(0.95);
+            transition: opacity 1.5s ease, transform 1.5s ease;
+        }
+
+        .hero.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px var(--primary-glow);
+            line-height: 1.2;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            margin-bottom: 40px;
+            max-width: 600px;
+        }
+
+        .cta-btn {
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            color: #fff;
+            background: linear-gradient(45deg, #ff8fa3, #9a66ac);
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 15px rgba(255, 143, 163, 0.4);
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .cta-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 0 25px rgba(255, 143, 163, 0.7);
+        }
+
+        .hero-tag {
+            position: absolute;
+            bottom: 40px;
+            right: 40px;
+            font-size: 0.9rem;
+            opacity: 0.6;
+            font-style: italic;
+        }
+
+        /* --- Cards Section --- */
+        .cards-section {
+            padding: 100px 0;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .card {
+            padding: 40px 30px;
+            text-align: center;
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1), transparent 60%);
+            opacity: 0;
+            transition: opacity 0.4s;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+            border-color: rgba(255,255,255,0.3);
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        .card h3 {
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+            color: var(--accent);
+        }
+
+        .card p {
+            line-height: 1.6;
+            font-weight: 300;
+        }
+
+        /* --- Reasons List --- */
+        .reasons-section {
+            padding: 80px 0;
+            text-align: center;
+        }
+
+        .reasons-section h2 {
+            font-size: 2.5rem;
+            margin-bottom: 50px;
+        }
+
+        .reasons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .reason-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            padding: 20px;
+            transition: transform 0.3s;
+        }
+
+        .reason-item:hover {
+            transform: scale(1.05);
+        }
+
+        .reason-icon {
+            font-size: 2rem;
+            color: var(--accent);
+            filter: drop-shadow(0 0 5px var(--accent));
+        }
+
+        /* --- Interactive Section --- */
+        .interactive-section {
+            padding: 100px 0;
+            text-align: center;
+        }
+
+        .interactive-section h2 {
+            font-size: 2.5rem;
+            margin-bottom: 40px;
+        }
+
+        .buttons-wrapper {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn-outline {
+            padding: 12px 30px;
+            font-size: 1rem;
+            border: 2px solid var(--accent);
+            color: var(--text-main);
+            background: transparent;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .btn-outline:hover {
+            background: var(--accent);
+            color: #fff;
+            box-shadow: 0 0 15px var(--accent);
+        }
+
+        /* --- Modal --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal-content {
+            background: #1e1e2f;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            border: 1px solid var(--accent);
+            transform: scale(0.8);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+
+        /* --- Footer --- */
+        footer {
+            padding: 50px 0 20px;
+            text-align: center;
+            border-top: 1px solid var(--glass-border);
+            margin-top: 50px;
+        }
+
+        .signature-input {
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid var(--text-muted);
+            color: var(--accent);
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            font-size: 1.2rem;
+            text-align: center;
+            width: 150px;
+            outline: none;
+        }
+
+        .signature-input::placeholder {
+            color: rgba(255,255,255,0.3);
+        }
+
+        .made-with {
+            margin-top: 30px;
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.3);
+        }
+
+        /* --- Animations --- */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.5rem; }
+            .grid { grid-template-columns: 1fr; }
+        }
+
+        /* Confetti Elements */
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background-color: #fff;
+            z-index: 1001;
+            top: 50%;
+            left: 50%;
+            pointer-events: none;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Müzik Kontrol -->
+    <div class="music-player glass" id="music-toggle" title="Müziği Başlat/Durdur">
+        <i data-lucide="music"></i>
+    </div>
+    <!-- Royalty Free Piano Music Placeholder -->
+    <audio id="bg-music" loop>
+        <source src="https://cdn.pixabay.com/download/audio/2022/10/05/audio_6862923520.mp3?filename=piano-moment-11634.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Canvas Snow -->
+    <canvas id="snow-canvas"></canvas>
+    
+    <!-- Background Decor -->
+    <div class="bokeh"></div>
+    <div class="bokeh"></div>
+
+    <!-- Main Content -->
+    <main class="container">
+        
+        <!-- Hero Section -->
+        <section class="hero" id="hero-section">
+            <h1>Sana bir şey <br>söylemem lazım... </h1>
+            <p>Bu yılbaşı, kalbimde sakladığımı artık saklamak istemiyorum.</p>
+            <a href=" #message-cards " class="cta-btn">
+                Oku <i data-lucide="mail-open" style="width:18px; margin-left:5px;"></i>
+            </a>
+            <div class="hero-tag">Yeni Yıl... </div>
+        </section>
+
+        <!-- Cards Section -->
+        <section id="message-cards" class="cards-section">
+            <div class="grid">
+                <div class="card glass">
+                    <h3>Seni Seviyorum</h3>
+                    <p>
+                        Belki çok duydun, belki hiç beklemiyordun. Ama bu soğuk günlerde içimi ısıtan tek gerçek bu. Kelimeler bazen yetersiz kalıyor ama bilmelisin ki kalbimdeki yerin çok ayrı.
+                    </p>
+                </div>
+                <div class="card glass">
+                    <h3>En Sevdiğim Anlar</h3>
+                    <p>
+                        Seninle güldüğümüz o an, bana baktığın o saniye... Zaman sanki duruyor. Hafızamda biriktirdiğim en değerli fotoğraf kareleri, içinde senin olduğun anlar.
+                    </p>
+                </div>
+                <div class="card glass">
+                    <h3>Yeni Yıldan Dileğim</h3>
+                    <p>
+                        Takvim yaprakları değişsin, mevsimler geçsin ama senin enerjin, senin ışığın üzerimden hiç eksilmesin. Birlikte daha nice anılara...
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Reasons List -->
+        <section class="reasons-section">
+            <h2>Küçük Nedenler</h2>
+            <div class="reasons-grid">
+                <div class="reason-item glass">
+                    <i data-lucide="smile" class="reason-icon"></i>
+                    <span>Gülüşün</span>
+                </div>
+                <div class="reason-item glass">
+                    <i data-lucide="cloud-sun" class="reason-icon"></i>
+                    <span>Yanındayken huzur</span>
+                </div>
+                <div class="reason-item glass">
+                    <i data-lucide="search" class="reason-icon"></i>
+                    <span>Detayları fark etmen</span>
+                </div>
+                <div class="reason-item glass">
+                    <i data-lucide="zap" class="reason-icon"></i>
+                    <span>Enerjin</span>
+                </div>
+                <div class="reason-item glass">
+                    <i data-lucide="message-circle" class="reason-icon"></i>
+                    <span>Sesin & Mesajların</span>
+                </div>
+                <div class="reason-item glass">
+                    <i data-lucide="heart-handshake" class="reason-icon"></i>
+                    <span>Birlikteyken biz</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Interactive Section -->
+        <section class="interactive-section glass" style="padding: 60px 20px; margin-bottom: 50px;">
+            <h2>Cevabın ne olur?</h2>
+            <div class="buttons-wrapper">
+                <button class="btn-outline" onclick="openModal('love')">Ben de seni seviyorum 🥺</button>
+                <button class="btn-outline" onclick="openModal('smile')">Şaşırdım ama gülümsetti 🙂</button>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer>
+            <p style="font-size: 1.1rem; margin-bottom: 15px;">Mutlu yıllar... Belki bu yılın en güzel başlangıcı biz oluruz.</p>
+            <div>
+                — <input type="text" class="signature-input" placeholder="(İmza)">
+            </div>
+            <div class="made-with">Made with love ❄️</div>
+        </footer>
+
+    </main>
+
+    <!-- Modals -->
+    <div class="modal-overlay" id="modal-overlay">
+        <div class="modal-content glass" id="modal-content">
+            <button class="modal-close" onclick="closeModal()">
+                <i data-lucide="x"></i>
+            </button>
+            <div id="modal-body">
+                <!-- İçerik JS ile dolacak -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Icons Init ---
+        // Ensure lucide is loaded before creating icons, or setup a fallback
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        } else {
+            console.warn('Lucide icons could not be loaded.');
+        }
+
+        // --- Opening Animation ---
+        window.addEventListener('load', () => {
+            const hero = document.getElementById('hero-section');
+            setTimeout(() => {
+                hero.classList.add('visible');
+            }, 300);
+        });
+
+        // --- Snow Effect (Canvas) ---
+        const canvas = document.getElementById('snow-canvas');
+        const ctx = canvas.getContext('2d');
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+
+        const snowflakes = [];
+        const snowflakeCount = 100;
+
+        class Snowflake {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.radius = Math.random() * 3 + 1;
+                this.speed = Math.random() * 1 + 0.5;
+                this.wind = Math.random() * 0.5 - 0.25;
+                this.opacity = Math.random() * 0.5 + 0.3;
+            }
+
+            update() {
+                this.y += this.speed;
+                this.x += this.wind;
+
+                if (this.y > height) {
+                    this.y = 0;
+                    this.x = Math.random() * width;
+                }
+                if (this.x > width) this.x = 0;
+                if (this.x < 0) this.x = width;
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
+                ctx.fill();
+                ctx.closePath();
+            }
+        }
+
+        for (let i = 0; i < snowflakeCount; i++) {
+            snowflakes.push(new Snowflake());
+        }
+
+        function animateSnow() {
+            ctx.clearRect(0, 0, width, height);
+            snowflakes.forEach(flake => {
+                flake.update();
+                flake.draw();
+            });
+            requestAnimationFrame(animateSnow);
+        }
+        animateSnow();
+
+        window.addEventListener('resize', () => {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+        });
+
+        // --- Music Player Logic ---
+        const musicToggle = document.getElementById('music-toggle');
+        const bgMusic = document.getElementById('bg-music');
+        let isPlaying = false;
+        // Sesi biraz kısalım
+        bgMusic.volume = 0.4;
+
+        musicToggle.addEventListener('click', () => {
+            if (isPlaying) {
+                bgMusic.pause();
+                musicToggle.innerHTML = '<i data-lucide="music"></i>';
+                musicToggle.style.animation = 'none';
+            } else {
+                bgMusic.play().catch(e => console.log("Oynatma hatası:", e));
+                musicToggle.innerHTML = '<i data-lucide="pause"></i>';
+                musicToggle.style.animation = 'spin 4s linear infinite';
+            }
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons(); // İkon değişince tekrar render et
+            }
+            isPlaying = !isPlaying;
+        });
+
+        // --- Modal & Confetti Logic ---
+        const modalOverlay = document.getElementById('modal-overlay');
+        const modalBody = document.getElementById('modal-body');
+
+        function openModal(type) {
+            modalOverlay.classList.add('active');
+            
+            if (type === 'love') {
+                modalBody.innerHTML = `
+                    <h2 style="color:var(--accent); margin-bottom:15px;">Harika! 🎉</h2>
+                    <p>Yeni yıla en güzel hediye: senin gülüşün.</p>
+                `;
+                triggerConfetti();
+            } else {
+                modalBody.innerHTML = `
+                    <h2 style="color:var(--text-main); margin-bottom:15px;">Teşekkürler ✨</h2>
+                    <p>Sorun değil, bunu sana söylemek bile bana yetti. Mutlu seneler!</p>
+                `;
+            }
+        }
+
+        function closeModal() {
+            modalOverlay.classList.remove('active');
+        }
+
+        // Overlay'e tıklayınca kapama
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) closeModal();
+        });
+
+        // Simple Confetti Explosion
+        function triggerConfetti() {
+            const colors = ['#ff8fa3', '#fff', '#9060eb', '#ffd700'];
+            for (let i = 0; i < 50; i++) {
+                const conf = document.createElement('div');
+                conf.classList.add('confetti');
+                document.body.appendChild(conf);
+
+                const bg = colors[Math.floor(Math.random() * colors.length)];
+                conf.style.background = bg;
+                
+                // Random position start (center screen relative)
+                const startX = window.innerWidth / 2;
+                const startY = window.innerHeight / 2;
+                
+                // Random velocity
+                const velX = (Math.random() - 0.5) * 20;
+                const velY = (Math.random() - 1) * 20;
+
+                conf.style.left = startX + 'px';
+                conf.style.top = startY + 'px';
+
+                // Animate manually
+                let x = startX;
+                let y = startY;
+                let vx = velX;
+                let vy = velY;
+                let opacity = 1;
+
+                const interval = setInterval(() => {
+                    x += vx;
+                    y += vy;
+                    vy += 0.5; // Gravity
+                    opacity -= 0.02;
+
+                    conf.style.left = x + 'px';
+                    conf.style.top = y + 'px';
+                    conf.style.opacity = opacity;
+                    conf.style.transform = `rotate(${Math.random() * 360}deg)`;
+
+                    if (opacity <= 0) {
+                        clearInterval(interval);
+                        conf.remove();
+                    }
+                }, 20);
+            }
+        }
+
+        // --- CTA Button Effect ---
+        const ctaBtn = document.querySelector('.cta-btn');
+        ctaBtn.addEventListener('click', () => {
+            // Butona basınca sayfa hafif bir "flash" yapsın
+            document.body.style.boxShadow = "inset 0 0 100px rgba(255,255,255,0.2)";
+            setTimeout(() => {
+                document.body.style.boxShadow = "none";
+            }, 500);
+        });
+
+    </script>
+</body>
+</html>
